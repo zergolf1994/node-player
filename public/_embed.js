@@ -161,7 +161,7 @@ if (top.location == self.location) {
         if ($jrwn.length) {
           $jrwn.after($rwn);
           $rwn.after($fwd);
-          //$jrwn.remove();
+          $jrwn.remove();
           //$(".jw-display-icon-rewind").remove();
         }
       });
