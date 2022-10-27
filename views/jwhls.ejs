@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title><%= title %></title>
+    <script
+      type="text/javascript"
+      src="https://ssl.p.jwpcdn.com/player/v/8.18.2/jwplayer.js"
+    ></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        height: 100vh;
+      }
+      .jw-skip {
+        zoom: 1.5;
+        border: 1px solid #f00;
+        background-color: #f70000;
+      }
+      .btn-out-ads {
+        position: absolute;
+        bottom: 9em;
+        right: 1em;
+        padding: 0.5em;
+        font-weight: bold;
+        border: 1px solid #f00;
+        background-color: #f70000;
+      }
+      .modals {
+        position: fixed;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal {
+        border: 1px solid #ffffff;
+        background-color: #f0f0f0;
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        flex-direction: column;
+      }
+      .modal .modal-footer{
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="player"></div>
+    <script
+      src="https://code.jquery.com/jquery-3.6.1.min.js"
+      async
+      defer
+    ></script>
+
+    <script
+      id="load-player"
+      src="//<%= host %>/script.js"
+      data-slug="<%= slug %>"
+      async
+      defer
+    ></script>
+    <script type="text/javascript">
+      <% if (file_m3u8) { %>
+        let sources = [{file:"<%= file_m3u8 %>",type:"hls"}],image="<%= image %>";
+      <% } %>
+    </script>
+  </body>
+</html>
