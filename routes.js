@@ -22,7 +22,5 @@ router.post("/api/get", require("./controllers/get"));
 //api
 router.post("/api/request", require("./controllers/api.request"));
 
-router.all("*", function (req, res) {
-  res.status(404).json({ status: false, msg: "page not found" });
-});
+router.all("*", (req, res) => res.status(404).end(""));
 module.exports = router;
