@@ -4,6 +4,25 @@ const queryString = require("query-string");
 const User = require("../Mysql/Users");
 const Files = require("../Mysql/Files");
 const UserSettings = require("../Mysql/Users.settings");
+const parser = require("ua-parser-js");
+
+exports.UserAgentData = (req) => {
+  let data = {};
+  data.client_ip =
+    req.headers["x-forwarded-for"] || req.socket.remoteAddress || null;
+
+  const ua = parser(req.headers["user-agent"]);
+
+  data.os_name = ua?.os?.name;
+  data.os_version = ua?.os?.version;
+  data.bs_name = ua?.browser?.name;
+  data.bs_version = ua?.browser?.version;
+  data.bs_major = ua?.browser?.major;
+  data.user_agent = ua?.ua;
+  data.referer = req.headers.referer || "";
+
+  return data;
+};
 
 exports.ExistsUsersName = async (username) => {
   let data = {};
@@ -63,14 +82,14 @@ exports.ExistsDir = async (title, uid) => {
 
 exports.ExistsLinks = async (type, source) => {
   let data = {};
-  
+
   try {
     const result = await Files.findOne({
       raw: true,
       where: { type: type, source: source },
     });
     if (result) {
-      data = { status: true, row:result };
+      data = { status: true, row: result };
       //data.result = result;
     } else {
       data.status = false;

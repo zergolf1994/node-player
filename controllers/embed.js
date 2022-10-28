@@ -1,6 +1,8 @@
 "use strict";
 const Files = require("../modules/Mysql/Files");
 const Player = require("../modules/Mysql/Players");
+const Statistic = require("../modules/Mysql/Statistic");
+const { UserAgentData, GenerateID } = require("../modules/Function");
 
 module.exports = async (req, res) => {
   const { slug } = req.params;
@@ -16,33 +18,47 @@ module.exports = async (req, res) => {
 
     where_files.slug = slug;
 
-    
     //player
     const player = await Player.findOne({
       attributes: ["active", "active_advert", "slug", "custom"],
       where: { domain: data.host, active: 1 },
     });
-    if (!player){
+    if (!player) {
       data.title = `Invalid`;
       data.msg = "Invalid domain";
       return res.render("showError", data);
     }
 
     const FindFiles = await Files.findOne({ where: where_files });
-    
+
     if (!FindFiles) {
       data.title = `Video not found`;
       data.msg = "Video not found";
       return res.render("showError", data);
-    }else{
-      data.title = `${FindFiles?.title} - Video Player`;
-      data.slug = slug;
-      return res.render("player", data);
     }
 
-    return res.status(200).json({ status: true, data });
+    //Statistics Created
+    let statis_data = UserAgentData(req);
+    statis_data.uid = FindFiles?.uid;
+    statis_data.slug = FindFiles?.slug;
+    statis_data.token = GenerateID(39);
+    statis_data.player = data.host;
+    statis_data.lastseenAt = new Date();
+
+    await Statistic.create(statis_data);
+
+    // Save file_views
+    await Files.update(
+      { views: FindFiles?.views + 1 },
+      { where: { id: FindFiles?.id }, silent: true }
+    );
+
+    data.title = `${FindFiles?.title}`;
+    data.slug = slug;
+    data.statis_token = statis_data.token;
+    return res.render("player", data);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.json({ status: false, msg: error.name });
   }
 };

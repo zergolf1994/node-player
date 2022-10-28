@@ -18,10 +18,10 @@ const Statistics = sequelize.define(
       defaultValue: "",
     },
     player: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING(255),
     },
     referer: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING(255),
     },
     token: {
       type: DataTypes.STRING(40),
@@ -62,7 +62,23 @@ const Statistics = sequelize.define(
     indexes: [
       {
         unique: false,
-        fields: ["uid", "slug", "player", "referer", "token"],
+        fields: ["uid"],
+      },
+      {
+        unique: false,
+        fields: ["slug"],
+      },
+      {
+        unique: false,
+        fields: ["player"],
+      },
+      {
+        unique: false,
+        fields: ["referer"],
+      },
+      {
+        unique: false,
+        fields: ["token"],
       },
     ],
   }

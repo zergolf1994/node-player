@@ -8,11 +8,31 @@ if (top.location == self.location) {
       this._devtools();
       const n = document.getElementById("load-player");
       this.slug = n.getAttribute("data-slug");
+      this.statisToken = n.getAttribute("data-statis-token");
       this.data = await this._get();
       if (this.data.status) {
         this.custom = JSON.parse(this.data.player.custom) || {};
         this._setup();
       }
+
+      if (this.statisToken) {
+        this._StatisUpdate(15000);
+      }
+    }
+    async _StatisUpdate(inv) {
+      setInterval(() => {
+        let a = {
+          token: this.statisToken,
+          lastseenAt: new Date().toISOString(),
+        };
+        const o = new XMLHttpRequest();
+        o.open("POST", "/statis/update", !0),
+          o.setRequestHeader("Content-Type", "application/json; charset=utf-8"),
+          o.send(JSON.stringify(a));
+        o.onload = function (e) {
+          console.log(e);
+        };
+      }, inv);
     }
     async _get() {
       let a = { slug: this.slug };
@@ -37,7 +57,6 @@ if (top.location == self.location) {
       await this._player();
     }
     async _player() {
-    
       let player = jwplayer("player"),
         slug = this.slug,
         ContinueDialog = this.custom.continue == "on" ? true : false;

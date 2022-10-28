@@ -18,6 +18,7 @@ router.get(
 router.get("/spript/:slug", require("./controllers/thumb.spript"));
 router.get("/vast/:slug.xml", require("./controllers/vast"));
 router.post("/api/get", require("./controllers/get"));
+router.post("/statis/update", require("./controllers/statis.update"));
 
 //api
 router.post("/api/request", require("./controllers/api.request"));
