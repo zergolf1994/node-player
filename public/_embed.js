@@ -23,15 +23,12 @@ if (top.location == self.location) {
       setInterval(() => {
         let a = {
           token: this.statisToken,
-          lastseenAt: new Date().toISOString(),
+          lastseenAt: new Date().toISOString()
         };
         const o = new XMLHttpRequest();
         o.open("POST", "/statis/update", !0),
           o.setRequestHeader("Content-Type", "application/json; charset=utf-8"),
           o.send(JSON.stringify(a));
-        o.onload = function (e) {
-          console.log(e);
-        };
       }, inv);
     }
     async _get() {
