@@ -50,7 +50,7 @@ module.exports = async (req, res) => {
     // Save file_views
     let viewedAt = new Date().toISOString();
     await Files.update(
-      { views: FindFiles?.views + 1 },
+      { views: FindFiles?.views + 1, viewedAt },
       { where: { id: FindFiles?.id }, silent: true }
     );
 
