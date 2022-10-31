@@ -48,6 +48,7 @@ module.exports = async (req, res) => {
     await Statistic.create(statis_data);
 
     // Save file_views
+    let viewedAt = new Date().toISOString();
     await Files.update(
       { views: FindFiles?.views + 1 },
       { where: { id: FindFiles?.id }, silent: true }
