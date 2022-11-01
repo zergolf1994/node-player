@@ -31,9 +31,13 @@ module.exports = async (req, res) => {
     const videos = await FilesVideo.findAll({
       raw: true,
       attributes: ["token", "quality"],
-      where: { slug, active: 1, sv_id: { [Op.ne]: 0 }, quality: { [Op.ne]: 240 } },
+      where: {
+        slug,
+        active: 1,
+        sv_id: { [Op.ne]: 0 },
+        token: { [Op.ne]: "" },
+      },
     });
-
     let tracks = {};
     if (videos.length == 1) {
       video.image = `//${host}/thumb/${videos[0]?.token}/${videos[0]?.quality}.jpg`;
@@ -48,6 +52,44 @@ module.exports = async (req, res) => {
       //tracks.file = `//${host}/thumbnails/${slug}.vtt`;
       //tracks.kind = `thumbnails`;
     } else {
+      //update status
+      if (file?.status > 2) {
+        let data_update = {};
+        const fv = await FilesVideo.findAll({
+          raw: true,
+          where: {
+            slug,
+            active: 1,
+          },
+        });
+
+        if (fv.length > 0) {
+          let q = [],
+            d = [];
+          fv.forEach((el) => {
+            if (!q.includes(el.quality)) {
+              q.push(el.quality);
+            } else {
+              d.push(el.id);
+            }
+          });
+          if (q.length > 1) {
+            data_update.status = 4;
+          } else {
+            data_update.status = 2;
+          }
+
+          if (d.length > 0) {
+            await FilesVideo.destroy({ where: { id: d } });
+            //console.log("delete", d);
+          }
+        }
+        //console.log("data_update", data_update);
+        await Files.update(data_update, {
+          where: { slug },
+        });
+      }
+
       video.file = `//${host}/processing.mp4`;
       video.fileType = `mp4`;
     }
@@ -57,7 +99,7 @@ module.exports = async (req, res) => {
       attributes: ["type"],
       where: { slug: slug },
     });
-    
+
     if (thumbs[0]) {
       tracks.file = `//${host}/thumbnails/${slug}.vtt`;
       tracks.kind = `thumbnails`;
