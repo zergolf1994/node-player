@@ -2,12 +2,18 @@
 const Files = require("../modules/Mysql/Files");
 const Player = require("../modules/Mysql/Players");
 const Statistic = require("../modules/Mysql/Statistic");
-const { UserAgentData, GenerateID } = require("../modules/Function");
+const {
+  UserAgentData,
+  GenerateID,
+  SettingValue,
+} = require("../modules/Function");
 
 module.exports = async (req, res) => {
   const { slug } = req.params;
   try {
     if (!slug) return res.status(404).json({ status: false });
+
+    let { analy_status, analy_realtime_status } = await SettingValue(true);
 
     let where_files = {},
       where_files_video = {},
@@ -38,14 +44,16 @@ module.exports = async (req, res) => {
     }
 
     //Statistics Created
-    let statis_data = UserAgentData(req);
-    statis_data.uid = FindFiles?.uid;
-    statis_data.slug = FindFiles?.slug;
-    statis_data.token = GenerateID(39);
-    statis_data.player = data.host;
-    statis_data.lastseenAt = new Date();
-
-    await Statistic.create(statis_data);
+    let statis_data = {};
+    if (analy_status == 1) {
+      statis_data = UserAgentData(req);
+      statis_data.uid = FindFiles?.uid;
+      statis_data.slug = FindFiles?.slug;
+      statis_data.token = GenerateID(39);
+      statis_data.player = data.host;
+      statis_data.lastseenAt = new Date();
+      await Statistic.create(statis_data);
+    }
 
     // Save file_views
     let viewedAt = new Date().toISOString();
@@ -56,7 +64,8 @@ module.exports = async (req, res) => {
 
     data.title = `${FindFiles?.title}`;
     data.slug = slug;
-    data.statis_token = statis_data.token;
+    data.statis_token =
+      analy_status == 1 && analy_realtime_status == 1 ? statis_data?.token : "";
     return res.render("player", data);
   } catch (error) {
     console.log(error);

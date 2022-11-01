@@ -6,6 +6,33 @@ const Files = require("../Mysql/Files");
 const UserSettings = require("../Mysql/Users.settings");
 const parser = require("ua-parser-js");
 
+const Settings = require("../Mysql/Settings");
+
+exports.SettingValue = async (e) => {
+  let data = [];
+  try {
+    const result = await Settings.findAll({
+      raw: true,
+      attributes: { exclude: ["id", "createdAt", "updatedAt"] },
+    });
+    return new Promise(function (resolve, reject) {
+      if (e) {
+        for (var key in result) {
+          let name = result[key].name;
+          let value = result[key].value;
+          data[name] = value;
+        }
+        resolve(data);
+      } else {
+        resolve(result);
+      }
+    });
+  } catch (error) {
+    data["status"] = false;
+    data["msg"] = error.message;
+    return data;
+  }
+};
 exports.UserAgentData = (req) => {
   let data = {};
   data.client_ip =
