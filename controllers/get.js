@@ -38,6 +38,7 @@ module.exports = async (req, res) => {
         token: { [Op.ne]: "" },
       },
     });
+
     let tracks = {};
     if (videos.length == 1) {
       video.image = `//${host}/thumb/${videos[0]?.token}/${videos[0]?.quality}.jpg`;
@@ -53,7 +54,7 @@ module.exports = async (req, res) => {
       //tracks.kind = `thumbnails`;
     } else {
       //update status
-      if (file?.status > 2) {
+      /*if (file?.status > 2) {
         let data_update = {};
         const fv = await FilesVideo.findAll({
           raw: true,
@@ -88,9 +89,10 @@ module.exports = async (req, res) => {
         await Files.update(data_update, {
           where: { slug },
         });
-      }
+      }*/
 
       video.file = `//${host}/processing.mp4`;
+      video.image = `//${host}/novideo.jpg`;
       video.fileType = `mp4`;
     }
 

@@ -18,9 +18,9 @@ module.exports = async (req, res) => {
   const quality_allow = ["1080", "720", "480", "360", "240", "default"];
 
   try {
-    if (!token || !quality) return res.status(404).end();
+    if (!token || !quality) return res.status(404).end("404_4");
 
-    if (!quality_allow.includes(quality)) return res.status(404).end();
+    if (!quality_allow.includes(quality)) return res.status(404).end("404_5");
 
     // find cache file json
     cacheDir = path.join(global.dir, `.cache/m3u8/index`);
@@ -31,11 +31,11 @@ module.exports = async (req, res) => {
       //use cache
       let data = await fs.readFileSync(`${cacheFile}`);
       row = JSON.parse(data);
+
       let row_domain = await group_domain(row.gid);
+      let gen = await genM3u8(row_domain?.domain_list, row?.meta_code);
 
-      let gen = await genM3u8(row_domain.domain_list, row.meta_code);
-
-      if (!gen) res.status(400).end();
+      if (!gen) res.status(400).end("e3");
       res.set("Cache-control", `public, max-age=60`);
       res.set("Content-type", `application/vnd.apple.mpegurl`);
       return res.status(200).end(gen);
@@ -45,19 +45,19 @@ module.exports = async (req, res) => {
       //findCache
       let row = await genCache();
 
-      if (!row) return res.status(400).end();
+      if (!row) return res.status(400).end("e4");
 
       let row_domain = await group_domain(row?.gid);
-      let gen = await genM3u8(row_domain.domain_list, row.meta_code);
+      let gen = await genM3u8(row_domain?.domain_list, row?.meta_code);
 
-      if (!gen) res.status(400).end();
+      if (!gen) res.status(400).end("e5");
       res.set("Cache-control", `public, max-age=60`);
       res.set("Content-type", `application/vnd.apple.mpegurl`);
       return res.status(200).end(gen);
     }
   } catch (error) {
     //console.log(error);
-    return res.status(404).end();
+    return res.status(404).end("404_1");
   }
 
   async function genCache() {
@@ -79,7 +79,7 @@ module.exports = async (req, res) => {
     const FindVideo = await FilesVideo.findOne({
       where: { token: token, quality: quality },
     });
-    if (!FindVideo) return res.status(404).end();
+    if (!FindVideo) return res.status(404).end("404_2");
 
     sv_id = FindVideo?.sv_id;
 
@@ -88,7 +88,7 @@ module.exports = async (req, res) => {
       where: { id: sv_id },
     });
 
-    if (!FindStorage) return res.status(404).end();
+    if (!FindStorage) return res.status(404).end("404_3");
 
     sv_ip = FindStorage?.sv_ip;
     const host = `http://${sv_ip}:8889/hls/${token}/file_${quality}.mp4/index.m3u8`;
