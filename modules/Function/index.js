@@ -4,9 +4,11 @@ const queryString = require("query-string");
 const User = require("../Mysql/Users");
 const Files = require("../Mysql/Files");
 const UserSettings = require("../Mysql/Users.settings");
-const parser = require("ua-parser-js");
-
 const Settings = require("../Mysql/Settings");
+const GroupDomain = require("../Mysql/GroupDomain");
+const parser = require("ua-parser-js");
+const os = require("os");
+const http = require("http");
 
 exports.SettingValue = async (e) => {
   let data = [];
@@ -211,6 +213,63 @@ exports.getDatagDrive = async (gid) => {
         resolve(data);
       } else {
         reject();
+      }
+    });
+  });
+};
+exports.Domain = async (gid = false) => {
+  let where = {},
+    gdm;
+  if (gid) {
+    where.id = gid;
+  }
+
+  where.type = "cloudflare";
+  where.active = 1;
+
+  gdm = await GroupDomain.findOne({
+    attributes: ["id", "domain_list", "type", "count_used"],
+    where,
+    order: [["count_used", "ASC"]],
+  });
+
+  if (!gdm) {
+    delete where.id;
+    where.type = "stream";
+    gdm = await GroupDomain.findOne({
+      attributes: ["id", "domain_list", "type", "count_used"],
+      where,
+    });
+  }
+
+  if (!gdm?.domain_list) {
+    return false;
+  }
+  gdm.domain = gdm?.domain_list.split(/\r?\n/);
+
+  return gdm;
+};
+
+exports.getRequest = async (url) => {
+  return new Promise(function (resolve, reject) {
+    if (!url) resolve(false);
+    http.get(url, function (resp) {
+      if (resp?.statusCode != 200) {
+        resolve(false);
+      } else {
+        const buffers = [];
+        let length = 0;
+        resp.on("data", function (chunk) {
+          // store each block of data
+          length += chunk.length;
+          buffers.push(chunk);
+        });
+        resp.on("end", function () {
+          const content = Buffer.concat(buffers);
+          const buf = Buffer.from(content);
+
+          resolve(buf.toString());
+        });
       }
     });
   });

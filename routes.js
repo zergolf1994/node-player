@@ -7,7 +7,8 @@ router.all("/", (req, res) => res.status(404).end(""));
 
 router.get("/demo/:slug", require("./controllers/demo"));
 router.get("/embed/:slug", require("./controllers/embed"));
-router.get("/index/:token/:quality", require("./controllers/m3u8.index"));
+router.get("/index/:token", require("./controllers/m3u8.index"));
+//router.get("/index/:token/:quality", require("./controllers/m3u8.index"));
 router.get("/master/:slug", require("./controllers/m3u8.master"));
 router.get("/thumb/:token/:quality.(jpg|png)", require("./controllers/thumb"));
 router.get("/thumbnails/:slug.(vtt)", require("./controllers/thumbnails_vtt"));

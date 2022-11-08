@@ -6,16 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
     <title><%= title %></title>
-    <style> * { margin: 0; padding: 0; } body { height: 100vh; } .jw-skip { zoom: 1.5; border: 1px solid #f00; background-color: #f70000; } .btn-out-ads { position: absolute; bottom: 9em; right: 1em; padding: 0.5em; font-weight: bold; border: 1px solid #f00; background-color: #f70000; } .modals { position: fixed; width: 100%; height: 100vh; overflow: hidden; z-index: 9999; display: flex; justify-content: center; align-items: center; } .modal { border: 1px solid #ffffff; background-color: #f0f0f0; padding: 1rem; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; flex-direction: column; } .modal .modal-footer { margin-top: 1rem; } .jw-display-icon-rewind svg.jw-svg-icon {color: transparent !important;} </style>
+    <link type="text/css" rel="stylesheet" charset="UTF-8" href="../css/zembed.css"></head>
   </head>
   <body>
-    <script
-      id="load-player"
-      src="//<%= host %>/_embed.js?v=1.0.1"
-      data-slug="<%= slug %>"
-      data-statis-token="<%= statis_token %>"
-      async
-      defer
-    ></script>
+    <script type="text/javascript">
+      const zembed = {slug : "<%= slug %>",token : "<%= token %>",id : "load-player"};
+    </script>
+    <script src="../js/zembed.js" async defer></script>
   </body>
 </html>

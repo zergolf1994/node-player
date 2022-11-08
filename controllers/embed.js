@@ -11,64 +11,45 @@ const {
 module.exports = async (req, res) => {
   const { slug } = req.params;
   try {
-    if (!slug) return res.status(404).json({ status: false });
+    if (!slug) return res.status(404).end();
+    const files = await Files.findOne({
+      attributes: ["id", "uid", "title"],
+      where: { slug: slug, active: 1 },
+    });
 
+    if (!files) {
+      return res.status(404).end();
+    }
     let { analy_status, analy_realtime_status } = await SettingValue(true);
-
-    let where_files = {},
-      where_files_video = {},
+    let statis = {},
       data = {};
 
-    data.slug = slug;
-    data.host = req.get("host");
-
-    where_files.slug = slug;
-
-    //player
-    const player = await Player.findOne({
-      attributes: ["active", "active_advert", "slug", "custom"],
-      where: { domain: data.host, active: 1 },
-    });
-    if (!player) {
-      data.title = `Invalid`;
-      data.msg = "Invalid domain";
-      return res.render("showError", data);
-    }
-
-    const FindFiles = await Files.findOne({ where: where_files });
-
-    if (!FindFiles) {
-      data.title = `Video not found`;
-      data.msg = "Video not found";
-      return res.render("showError", data);
-    }
-
-    //Statistics Created
-    let statis_data = {};
     if (analy_status == 1) {
-      statis_data = UserAgentData(req);
-      statis_data.uid = FindFiles?.uid;
-      statis_data.slug = FindFiles?.slug;
-      statis_data.token = GenerateID(39);
-      statis_data.player = data.host;
-      statis_data.lastseenAt = new Date();
-      await Statistic.create(statis_data);
+      statis = UserAgentData(req);
+      statis.uid = files?.uid;
+      statis.slug = slug;
+      statis.token = GenerateID(39);
+      statis.player = req.get("host");
+      statis.lastseenAt = new Date();
+      await Statistic.create(statis);
     }
-
     // Save file_views
     let viewedAt = new Date().toISOString();
     await Files.update(
-      { views: FindFiles?.views + 1, viewedAt },
-      { where: { id: FindFiles?.id }, silent: true }
+      { views: files?.views + 1, viewedAt },
+      { where: { id: files?.id }, silent: true }
     );
 
-    data.title = `${FindFiles?.title}`;
+    data.title = `${files?.title}`;
     data.slug = slug;
-    data.statis_token =
-      analy_status == 1 && analy_realtime_status == 1 ? statis_data?.token : "";
+    data.token =
+      analy_status == 1 && analy_realtime_status == 1 ? statis?.token : "";
+
+      
+    res.set("Cache-control", `public, max-age=60`);
     return res.render("player", data);
   } catch (error) {
     console.log(error);
-    return res.json({ status: false, msg: error.name });
+    return res.status(404).end();
   }
 };

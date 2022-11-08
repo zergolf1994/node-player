@@ -10,95 +10,109 @@ const http = require("http");
 const os = require("os");
 const fs = require("fs-extra");
 const path = require("path");
+const { Domain, getRequest } = require("../modules/Function");
 
-let sv_id, sv_ip, row, code_meta, domainList, setCache, cacheDir, cacheFile;
+//let sv_id, sv_ip, row, code_meta, domainList, setCache, cacheDir, cacheFile;
 
 module.exports = async (req, res) => {
-  const { token, quality } = req.params;
-  const quality_allow = ["1080", "720", "480", "360", "240", "default"];
-
+  const { token } = req.params;
+  let quality, m3u8;
   try {
-    if (!token || !quality) return res.status(404).end("404_4");
+    if (!token) return res.status(404).end("404_4");
 
-    if (!quality_allow.includes(quality)) return res.status(404).end("404_5");
+    m3u8 = await CacheM3u8.findOne({
+      attributes: ["sid", "gid", "meta_code", "quality"],
+      where: { token: token, type: "index" },
+    });
 
-    // find cache file json
-    cacheDir = path.join(global.dir, `.cache/m3u8/index`);
-    cacheFile = path.join(cacheDir, `${token}-${quality}.json`);
-
-    if (fs.existsSync(`${cacheFile}`)) {
-      //console.log("cache", true);
-      //use cache
-      let data = await fs.readFileSync(`${cacheFile}`);
-      row = JSON.parse(data);
-
-      let row_domain = await group_domain(row.gid);
-      let gen = await genM3u8(row_domain?.domain_list, row?.meta_code);
-
-      if (!gen) res.status(400).end("e3");
-      res.set("Cache-control", `public, max-age=60`);
-      res.set("Content-type", `application/vnd.apple.mpegurl`);
-      return res.status(200).end(gen);
-    } else {
-      //create cache
-      //console.log("cache", false);
-      //findCache
-      let row = await genCache();
-
-      if (!row) return res.status(400).end("e4");
-
-      let row_domain = await group_domain(row?.gid);
-      let gen = await genM3u8(row_domain?.domain_list, row?.meta_code);
-
-      if (!gen) res.status(400).end("e5");
-      res.set("Cache-control", `public, max-age=60`);
-      res.set("Content-type", `application/vnd.apple.mpegurl`);
-      return res.status(200).end(gen);
+    if (!m3u8) {
+      m3u8 = await GenNewCache();
+      if (!m3u8) return res.status(404).end("not_video_convert");
     }
+
+    let where = {};
+    let { id, domain, type, count_used } = await Domain(m3u8?.gid);
+    if (!domain.length) return res.status(404).end("not_domain_lists");
+
+    quality = m3u8?.quality;
+
+    if (!m3u8.gid) {
+      await CacheM3u8.update(
+        { gid: id },
+        {
+          where: { token: token },
+        }
+      );
+      await GroupDomain.update(
+        { count_used: count_used + 1 },
+        {
+          where: { id: id },
+        }
+      );
+    }
+
+    let code = await GenM3u8Index(domain, m3u8?.meta_code);
+    if (!code) return res.status(404).end("error_lists");
+    res.set("Cache-control", `public, max-age=60`);
+    res.set("Content-type", `application/vnd.apple.mpegurl`);
+    return res.status(200).end(code);
   } catch (error) {
-    //console.log(error);
+    console.log(error);
     return res.status(404).end("404_1");
   }
 
-  async function genCache() {
-    const FindCache = await CacheM3u8.findOne({
-      raw: true,
-      where: { token: token, quality: quality },
-    });
-    await fs.ensureDir(cacheDir);
+  async function GenM3u8Index(domain, data) {
+    if (data) {
+      const code = [];
+      let start = 0,
+        end = domain.length - 1;
 
-    if (!FindCache) {
-      return await genCache2();
-    } else {
-      fs.writeFileSync(`${cacheFile}`, JSON.stringify(FindCache), "utf8");
-      return FindCache;
+      data = JSON.parse(data);
+
+      data.forEach((k, i) => {
+        if (isNaN(k)) {
+          if (!k.match(/EXT-X-MAP:URI=(.*?)-/gm)) {
+            code.push(k);
+          }
+        } else {
+          var out = `//${domain[start]}/${token}/${quality}/${k}.html`;
+          code.push(out);
+          if (start == end) {
+            start = 0;
+          } else {
+            start++;
+          }
+        }
+      });
+      return code.join(os.EOL);
     }
+    return;
   }
-  async function genCache2() {
-    //console.log("genCache2", true);
-    const FindVideo = await FilesVideo.findOne({
-      where: { token: token, quality: quality },
+  async function GenNewCache() {
+    const vdo = await FilesVideo.findOne({
+      where: { token: token, active: 1 },
     });
-    if (!FindVideo) return res.status(404).end("404_2");
 
-    sv_id = FindVideo?.sv_id;
+    if (!vdo) return;
 
-    const FindStorage = await Storage.findOne({
+    const storage = await Storage.findOne({
       attributes: [`sv_ip`],
-      where: { id: sv_id },
+      where: { id: vdo?.sv_id },
     });
+    const host_files = `http://${storage?.sv_ip}:8888/files/list?token=${token}`;
 
-    if (!FindStorage) return res.status(404).end("404_3");
+    let files_list = await getRequest(host_files);
+    files_list = JSON.parse(files_list).data.files[0];
 
-    sv_ip = FindStorage?.sv_ip;
-    const host = `http://${sv_ip}:8889/hls/${token}/file_${quality}.mp4/index.m3u8`;
+    if (!files_list) return;
+
+    const host = `http://${storage?.sv_ip}:8889/hls/${token}/${files_list}/index.m3u8`;
 
     let result = await getRequest(host);
     if (!result) return;
 
     const array = [];
-    let code = result;
-    let html = code.split(/\r?\n/);
+    let html = result.split(/\r?\n/);
     var regex = /seg-(.*?)-/gm;
     await html.forEach((k, i) => {
       if (k.match(regex)) {
@@ -117,123 +131,23 @@ module.exports = async (req, res) => {
         }
       }
     });
-
     //create cache in mysql
     const insert = {};
     insert.type = "index";
-    insert.token = token;
-    insert.sid = sv_id;
-    insert.quality = quality;
+    insert.token = vdo?.token;
+    insert.sid = vdo?.sv_id;
+    insert.quality = vdo?.quality;
     insert.meta_code = JSON.stringify(array);
+
     // check count
     const count = await CacheM3u8.count({
-      where: { token: token, quality: quality },
+      where: { token: vdo?.token, quality: vdo?.quality },
     });
-
-    if(count){
+    if (count) {
       return insert;
-    }else{
+    } else {
       const save = await CacheM3u8.create(insert);
       return save;
     }
-  }
-
-  async function genM3u8(domain, code) {
-    domain = domain.split(/\r?\n/);
-    const data_meta = [];
-    let start = 0,
-      end = domain.length - 1;
-
-    if (code) {
-      code = JSON.parse(code);
-
-      code.forEach((k, i) => {
-        if (isNaN(k)) {
-          if (!k.match(/EXT-X-MAP:URI=(.*?)-/gm)) {
-            data_meta.push(k);
-          }
-        } else {
-          var out = `//${domain[start]}/${token}/${quality}/${k}.html`;
-          data_meta.push(out);
-          if (start == end) {
-            start = 0;
-          } else {
-            start++;
-          }
-        }
-      });
-
-      return data_meta.join(os.EOL);
-    }
-
-    return;
-  }
-
-  async function group_domain(gid = false) {
-    let where = {},
-      count;
-
-    if (!gid) {
-      where.type = "cloudflare";
-      where.active = 1;
-    } else {
-      where.active = 1;
-      where.id = gid;
-    }
-
-    count = await GroupDomain.count({ where });
-
-    if (!count) {
-      where.type = "stream";
-      count = await GroupDomain.count({ where });
-    }
-
-    if (!count) return;
-
-    let domain = await GroupDomain.findOne({
-      raw: true,
-      where,
-      attributes: ["id", "type", "domain_list"],
-      order: [["count_used", "ASC"]],
-    });
-
-    if (domain.type == "cloudflare" && !gid) {
-      //update gid
-
-      await CacheM3u8.update(
-        { gid: domain?.id },
-        {
-          where: { token: token, quality: quality },
-        }
-      );
-      await genCache();
-    }
-
-    return domain;
-  }
-
-  async function getRequest(url) {
-    return new Promise(function (resolve, reject) {
-      if (!url) resolve(false);
-      http.get(url, function (resp) {
-        if (resp?.statusCode != 200) {
-          resolve(false);
-        } else {
-          const buffers = [];
-          let length = 0;
-          resp.on("data", function (chunk) {
-            // store each block of data
-            length += chunk.length;
-            buffers.push(chunk);
-          });
-          resp.on("end", function () {
-            const content = Buffer.concat(buffers);
-            const buf = Buffer.from(content);
-
-            resolve(buf.toString());
-          });
-        }
-      });
-    });
   }
 };

@@ -33,9 +33,10 @@ module.exports = async (req, res) => {
         extm3u +=
           `#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=${filesize},RESOLUTION=${mimesize}` +
           os.EOL;
-        extm3u += `//${host}/index/${token}/${quality}` + os.EOL + os.EOL;
+        extm3u += `//${host}/index/${token}` + os.EOL + os.EOL;
       }
     }
+    res.set("Cache-control", `public, max-age=60`);
     res.set("Content-type", `application/vnd.apple.mpegurl`);
     return res.end(extm3u);
   } catch (error) {
