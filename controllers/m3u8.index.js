@@ -12,7 +12,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const { Domain, getRequest } = require("../modules/Function");
 
-//let sv_id, sv_ip, row, code_meta, domainList, setCache, cacheDir, cacheFile;
+let cacheDir, cacheFile;
 
 module.exports = async (req, res) => {
   const { token } = req.params;
@@ -20,14 +20,27 @@ module.exports = async (req, res) => {
   try {
     if (!token) return res.status(404).end("404_4");
 
-    m3u8 = await CacheM3u8.findOne({
-      attributes: ["sid", "gid", "meta_code", "quality"],
-      where: { token: token, type: "index" },
-    });
+    // find cache file json
+    cacheDir = path.join(global.dir, `.cache/m3u8/index`);
+    cacheFile = path.join(cacheDir, `${token}-${quality}.json`);
+    if (fs.existsSync(`${cacheFile}`)) {
+      let data = await fs.readFileSync(`${cacheFile}`);
+      m3u8 = JSON.parse(data);
+      console.log("cache", token);
+    } else {
+      m3u8 = await CacheM3u8.findOne({
+        raw: true,
+        attributes: ["sid", "gid", "meta_code", "quality"],
+        where: { token: token, type: "index" },
+      });
 
-    if (!m3u8) {
-      m3u8 = await GenNewCache();
-      if (!m3u8) return res.status(404).end("not_video_convert");
+      if (!m3u8) {
+        m3u8 = await GenNewCache();
+        if (!m3u8) return res.status(404).end("not_video_convert");
+      }
+      await fs.ensureDir(cacheDir);
+      fs.writeFileSync(`${cacheFile}`, JSON.stringify(m3u8), "utf8");
+      console.log("generate", token);
     }
 
     let where = {};
