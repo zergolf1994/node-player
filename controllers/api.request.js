@@ -66,6 +66,7 @@ module.exports = async (req, res) => {
         status: "success",
         cache: true,
         embed_url: `https://${domain}/embed/${file?.row?.slug}/`,
+        slug: `${file?.row?.slug}`,
       });
 
     if (allow?.type == "direct") {
@@ -147,6 +148,7 @@ module.exports = async (req, res) => {
         status: "success",
         cache: false,
         embed_url: `https://${domain}/embed/${data?.slug}/`,
+        slug: `${data?.slug}`,
       });
     } else {
       return res.json({ status: false });

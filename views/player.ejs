@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
     <title><%= title %></title>
-    <link type="text/css" rel="stylesheet" charset="UTF-8" href="../css/zembed.css"></head>
+    <link type="text/css" rel="stylesheet" charset="UTF-8" href="//<%= host %>/css/zembed.css"></head>
   </head>
   <body>
     <script type="text/javascript">
       const zembed = {slug : "<%= slug %>",token : "<%= token %>",id : "load-player"};
     </script>
-    <script src="../js/zembed.js" async defer></script>
+    <script src="//<%= host %>/js/zembed.js" async defer></script>
   </body>
 </html>

@@ -40,12 +40,12 @@ module.exports = async (req, res) => {
       { where: { id: files?.id }, silent: true }
     );
 
+    data.host = req.get("host");
     data.title = `${files?.title}`;
     data.slug = slug;
     data.token =
       analy_status == 1 && analy_realtime_status == 1 ? statis?.token : "";
 
-      
     res.set("Cache-control", `public, max-age=60`);
     return res.render("player", data);
   } catch (error) {
