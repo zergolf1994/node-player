@@ -426,3 +426,10 @@ exports.getSourceGdrive = async (gid = false, uid = false) => {
 
   return data;
 };
+exports.httpStatus = async (url) => {
+  return new Promise(function (resolve, reject) {
+    http.get(url, function (response) {
+      resolve(response.statusCode);
+    });
+  });
+};

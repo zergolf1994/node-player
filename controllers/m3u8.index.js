@@ -1,7 +1,9 @@
 "use strict";
 
 const request = require("request-promise");
+const Files = require("../modules/Mysql/Files");
 const FilesVideo = require("../modules/Mysql/FilesVideo");
+const Backup = require("../modules/Mysql/Backup");
 const Storage = require("../modules/Mysql/Storage");
 const CacheM3u8 = require("../modules/Mysql/CacheM3u8");
 const GroupDomain = require("../modules/Mysql/GroupDomain");
@@ -10,13 +12,13 @@ const http = require("http");
 const os = require("os");
 const fs = require("fs-extra");
 const path = require("path");
-const { Domain, getRequest } = require("../modules/Function");
+const { Domain, getRequest, httpStatus } = require("../modules/Function");
 
 let cacheDir, cacheFile;
 
 module.exports = async (req, res) => {
   const { token } = req.params;
-  let quality, m3u8;
+  let quality, m3u8, slug;
   try {
     if (!token) return res.status(404).end("404_4");
 
@@ -36,7 +38,9 @@ module.exports = async (req, res) => {
 
       if (!m3u8) {
         m3u8 = await GenNewCache();
-        if (!m3u8) return res.status(404).end("not_video_convert");
+        if (!m3u8) {
+          return res.status(404).end("not_video_convert");
+        }
       }
       await fs.ensureDir(cacheDir);
       fs.writeFileSync(`${cacheFile}`, JSON.stringify(m3u8), "utf8");
@@ -107,7 +111,7 @@ module.exports = async (req, res) => {
     });
 
     if (!vdo) return;
-
+    slug = vdo?.slug;
     const storage = await Storage.findOne({
       attributes: [`sv_ip`],
       where: { id: vdo?.sv_id },
@@ -120,6 +124,24 @@ module.exports = async (req, res) => {
     if (!files_list) return;
 
     const host = `http://${storage?.sv_ip}:8889/hls/${token}/${files_list}/index.m3u8`;
+
+    let sCode = await httpStatus(host);
+    console.log(sCode);
+    if (sCode == 404) {
+      //delete file_video
+      await FilesVideo.destroy({ where: { slug: slug } });
+      //delete file backup
+      await Backup.destroy({ where: { slug: slug } });
+      //update files to wait
+      await Files.update(
+        { status: 0 },
+        {
+          where: { slug: slug },
+        }
+      );
+      console.log("error", slug);
+      return;
+    }
 
     let result = await getRequest(host);
     if (!result) return;
