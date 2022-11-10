@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
       }
       await fs.ensureDir(cacheDir);
       fs.writeFileSync(`${cacheFile}`, JSON.stringify(m3u8), "utf8");
-      console.log("generate", token);
+      console.warn("generate", token);
     }
 
     let where = {};
@@ -74,7 +74,7 @@ module.exports = async (req, res) => {
     res.set("Content-type", `application/vnd.apple.mpegurl`);
     return res.status(200).end(code);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(404).end("404_1");
   }
 
