@@ -310,11 +310,11 @@ exports.GoogleAuth = async (uid = false) => {
   where.active = 1;
 
   if (uid) {
-    where.uid = 1;
+    where.uid = uid;
   } else {
     where.uid = 0;
   }
-
+  console.log(where)
   row = await GAuth.findOne({
     where,
     attributes: { exclude: ["updatedAt", "createdAt"] },
@@ -358,7 +358,7 @@ exports.GoogleAuth = async (uid = false) => {
       where: { id: row?.id },
     });
   }
-
+  //console.log("email", row?.email);
   return token;
 };
 
@@ -367,6 +367,7 @@ exports.getSourceGdrive = async (gid = false, uid = false) => {
   const data = {};
   const url = `https://docs.google.com/get_video_info?docid=${gid}`;
   let token = await this.GoogleAuth(uid);
+  //console.log(uid, token);
   if (!token) return;
   return new Promise(function (resolve, reject) {
     request(
