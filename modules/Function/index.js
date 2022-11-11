@@ -314,7 +314,7 @@ exports.GoogleAuth = async (uid = false) => {
   } else {
     where.uid = 0;
   }
-  console.log(where)
+  
   row = await GAuth.findOne({
     where,
     attributes: { exclude: ["updatedAt", "createdAt"] },
