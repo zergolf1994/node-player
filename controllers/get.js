@@ -16,6 +16,8 @@ module.exports = async (req, res) => {
   const { slug } = req.body;
   const host = req.get("host");
 
+  let { domain_thumbnails } = await SettingValue(true);
+
   try {
     if (!slug) return res.status(404).json({ status: false });
     //player
@@ -78,7 +80,7 @@ module.exports = async (req, res) => {
       thumbnails = false;
     }
 
-    if (thumbnails) {
+    if (thumbnails && domain_thumbnails) {
       const thumbs = await FilesThumb.findAll({
         raw: true,
         attributes: ["type"],

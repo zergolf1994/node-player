@@ -3,12 +3,15 @@
 const request = require("request-promise");
 const fs = require("fs-extra");
 const http = require("http");
+const path = require("path");
+const { SettingValue } = require("../modules/Function");
 
 module.exports = async (req, res) => {
-  const { slug , item } = req.params;
+  const { slug, item } = req.params;
+  let { domain_thumbnails } = await SettingValue(true);
 
   try {
-    let cacheDir = "./vttdata";
+    let cacheDir = path.join(global.dir, `.cache/thumbs`);
 
     await fs.ensureDir(cacheDir);
 
@@ -23,7 +26,7 @@ module.exports = async (req, res) => {
       let content = await fs.readFileSync(`${cacheDir}/${slug}_${item}_image`);
       streamContent(content);
     } else {
-      const host = `http://little-union-1972.zembed.workers.dev/${slug}_${item}.jpg`;
+      const host = `http://${domain_thumbnails}/${slug}-${item}.jpg`;
       http.get(host, function (resp) {
         let buffers = [];
         let length = 0;
@@ -34,7 +37,11 @@ module.exports = async (req, res) => {
         });
         resp.on("end", function () {
           let content = Buffer.concat(buffers);
-          fs.writeFileSync(`${cacheDir}/${slug}_${item}_image`, content, "utf8");
+          fs.writeFileSync(
+            `${cacheDir}/${slug}_${item}_image`,
+            content,
+            "utf8"
+          );
           streamContent(content);
         });
       });

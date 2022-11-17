@@ -16,7 +16,7 @@ router.get(
   "/thumbnails/:slug/:item.(jpg|png)",
   require("./controllers/thumbnails_image")
 );
-router.get("/spript/:slug", require("./controllers/thumb.spript"));
+//router.get("/spript/:slug", require("./controllers/thumb.spript"));
 router.get("/vast/:slug.xml", require("./controllers/vast"));
 router.post("/api/get", require("./controllers/get"));
 router.post("/statis/update", require("./controllers/statis.update"));
