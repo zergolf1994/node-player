@@ -14,17 +14,16 @@ const fs = require("fs-extra");
 const path = require("path");
 const { Domain, getRequest, httpStatus } = require("../modules/Function");
 
-let cacheDir, cacheFile;
-
 module.exports = async (req, res) => {
   const { token } = req.params;
   let quality, m3u8, slug;
+  let cacheDir, cacheFile;
   try {
     if (!token) return res.status(404).end("404_4");
 
     // find cache file json
     cacheDir = path.join(global.dir, `.cache/m3u8/index`);
-    cacheFile = path.join(cacheDir, `${token}-${quality}.json`);
+    cacheFile = path.join(cacheDir, `${token}.json`);
     if (fs.existsSync(`${cacheFile}`)) {
       let data = await fs.readFileSync(`${cacheFile}`);
       m3u8 = JSON.parse(data);
@@ -39,12 +38,13 @@ module.exports = async (req, res) => {
       if (!m3u8) {
         m3u8 = await GenNewCache();
         if (!m3u8) {
+          //delete
           return res.status(404).end("not_video_convert");
         }
       }
       await fs.ensureDir(cacheDir);
       fs.writeFileSync(`${cacheFile}`, JSON.stringify(m3u8), "utf8");
-      console.warn("generate", token);
+      console.log("generate", token);
     }
 
     let where = {};
@@ -66,6 +66,11 @@ module.exports = async (req, res) => {
           where: { id: id },
         }
       );
+      m3u8.gid = id;
+
+      await fs.ensureDir(cacheDir);
+      fs.writeFileSync(`${cacheFile}`, JSON.stringify(m3u8), "utf8");
+      console.log("re generate", token);
     }
 
     let code = await GenM3u8Index(domain, m3u8?.meta_code);
@@ -126,7 +131,7 @@ module.exports = async (req, res) => {
     const host = `http://${storage?.sv_ip}:8889/hls/${token}/${files_list}/index.m3u8`;
 
     let sCode = await httpStatus(host);
-    console.log(sCode);
+    //console.log(sCode);
     if (sCode == 404) {
       //delete file_video
       await FilesVideo.destroy({ where: { slug: slug } });
