@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
     if (fs.existsSync(`${cacheFile}`)) {
       let data = await fs.readFileSync(`${cacheFile}`);
       m3u8 = JSON.parse(data);
-      console.log("cache", token);
+      //console.log("cache", token);
     } else {
       m3u8 = await CacheM3u8.findOne({
         raw: true,
@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
       }
       await fs.ensureDir(cacheDir);
       fs.writeFileSync(`${cacheFile}`, JSON.stringify(m3u8), "utf8");
-      console.log("generate", token);
+      //console.log("generate", token);
     }
 
     let where = {};
@@ -70,7 +70,7 @@ module.exports = async (req, res) => {
 
       await fs.ensureDir(cacheDir);
       fs.writeFileSync(`${cacheFile}`, JSON.stringify(m3u8), "utf8");
-      console.log("re generate", token);
+      //console.log("re generate", token);
     }
 
     let code = await GenM3u8Index(domain, m3u8?.meta_code);
@@ -124,11 +124,31 @@ module.exports = async (req, res) => {
     const host_files = `http://${storage?.sv_ip}:8888/files/list?token=${token}`;
 
     let files_list = await getRequest(host_files);
-    files_list = JSON.parse(files_list).data.files[0];
 
-    if (!files_list) return;
+    //files_list = JSON.parse(files_list).data.files[0];
 
-    const host = `http://${storage?.sv_ip}:8889/hls/${token}/${files_list}/index.m3u8`;
+    files_list = JSON.parse(files_list);
+
+    if (!files_list?.status) {
+      // ไม่มีไฟล์ในเซิฟ
+      // remove file_video
+      await FilesVideo.destroy({ where: { slug: slug } });
+      await Files.update(
+        { status: 2, e_code: 0 },
+        {
+          where: { slug: slug },
+        }
+      );
+      //Backup
+      console.log(files_list?.data?.files[0]);
+      return;
+    }
+
+    let file_q = files_list?.data?.files[0];
+
+    if (!file_q) return;
+
+    const host = `http://${storage?.sv_ip}:8889/hls/${token}/${file_q}/index.m3u8`;
 
     let sCode = await httpStatus(host);
     //console.log(sCode);
@@ -139,12 +159,12 @@ module.exports = async (req, res) => {
       await Backup.destroy({ where: { slug: slug } });
       //update files to wait
       await Files.update(
-        { status: 0 },
+        { status: 0, e_code: 104 },
         {
           where: { slug: slug },
         }
       );
-      console.log("error", slug);
+      //console.log("error", slug);
       return;
     }
 

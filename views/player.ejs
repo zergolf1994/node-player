@@ -13,5 +13,14 @@
       const zembed = {slug : "<%= slug %>",token : "<%= token %>",id : "load-player"};
     </script>
     <script src="//<%= host %>/js/zembed.js" async defer></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MNDTG994HH"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-MNDTG994HH');
+    </script>
   </body>
 </html>
