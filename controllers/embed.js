@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
   try {
     if (!slug) return res.status(404).end();
     const files = await Files.findOne({
-      attributes: ["id", "uid", "title"],
+      attributes: ["id", "uid", "title", "views"],
       where: { slug: slug, active: 1 },
     });
 
