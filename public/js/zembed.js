@@ -103,7 +103,8 @@ if (top.location == self.location) {
       document.body.prepend(div);
 
       await waitForGlobalObject("p2pml", "core");
-      this.isP2PSupported = p2pml.core.HybridLoader.isSupported();
+      //this.isP2PSupported = p2pml.core.HybridLoader.isSupported();
+      this.isP2PSupported = false;
 
       this.downloadStats = [];
       this.downloadTotals = { http: 0, p2p: 0 };
@@ -174,8 +175,10 @@ if (top.location == self.location) {
       player.primary = "html5";
       player.hlshtml = "true";
       player.controls = "true";
-      /*player.autostart =
-        this.custom.autoplay == "on" ? true : set?.auto ? true : false;*/
+      if (!this.isP2PSupported) {
+        player.autostart =
+          this.custom.autoplay == "on" ? true : set?.auto ? true : false;
+      }
       player.title = this.custom.show_title == "on" ? this.data.file.title : "";
       player.mute = this.custom.mute == "on" ? true : false;
       player.repeat = this.custom.repeat == "on" ? true : false;
@@ -215,9 +218,9 @@ if (top.location == self.location) {
         ];
       }
       player.setup(player);
-      jwplayer_hls_provider.attach();
 
       if (this.isP2PSupported) {
+        jwplayer_hls_provider.attach();
         p2pml.hlsjs.initJwPlayer(player, {
           liveSyncDurationCount: 7,
           loader: this.engine.createLoaderClass(),
