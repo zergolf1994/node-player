@@ -7,6 +7,7 @@ if (top.location == self.location) {
       const n = document.getElementById(`${zembed.id}`);
       this.slug = zembed.slug;
       this.statisToken = zembed.token;
+      this.host = zembed.host;
       await this._jwpcdn();
       await this._jquery();
       this.data = await this._get();
@@ -77,7 +78,7 @@ if (top.location == self.location) {
       playerwithadvert.repeat = this.custom.repeat == "on" ? true : false;
       playerwithadvert.image = this.data.video.image;
       playerwithadvert.sources = [
-        { file: "../processing.mp4", type: "video/mp4" },
+        { file: `//${this.host}/processing.mp4`, type: "video/mp4" },
       ];
       if (this.data.player.advert) {
         playerwithadvert.advertising = {
