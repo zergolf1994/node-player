@@ -10,6 +10,7 @@ if (top.location == self.location) {
       await this._jwpcdn();
       await this._jquery();
       this.data = await this._get();
+
       if (this.data.status) {
         this.custom = JSON.parse(this.data.player.custom) || {};
         this._setup();
@@ -23,7 +24,7 @@ if (top.location == self.location) {
       setInterval(() => {
         let a = {
           token: this.statisToken,
-          lastseenAt: new Date().toISOString()
+          lastseenAt: new Date().toISOString(),
         };
         const o = new XMLHttpRequest();
         o.open("POST", "/statis/update", !0),
@@ -51,9 +52,116 @@ if (top.location == self.location) {
       let div = document.createElement("div");
       div.id = "player";
       document.body.prepend(div);
-      await this._player();
+      if (this.data.player.advert) {
+        await this._playerwithadvert();
+      } else {
+        await this.p2p_player();
+      }
     }
-    async _player() {
+    async _playerwithadvert() {
+      let playerwithadvert = jwplayer("player"),
+        slug = this.slug,
+        ContinueDialog = this.custom.continue == "on" ? true : false;
+
+      playerwithadvert.key = "W7zSm81+mmIsg7F+fyHRKhF3ggLkTqtGMhvI92kbqf/ysE99";
+      playerwithadvert.width = "100%";
+      playerwithadvert.height = "100%";
+      playerwithadvert.preload = "auto";
+      playerwithadvert.primary = "html5";
+      playerwithadvert.hlshtml = "true";
+      playerwithadvert.controls = "true";
+      playerwithadvert.autostart = this.custom.autoplay == "on" ? true : false;
+      playerwithadvert.title =
+        this.custom.show_title == "on" ? this.data.file.title : "";
+      playerwithadvert.mute = this.custom.mute == "on" ? true : false;
+      playerwithadvert.repeat = this.custom.repeat == "on" ? true : false;
+      playerwithadvert.image = this.data.video.image;
+      playerwithadvert.sources = [
+        { file: "../processing.mp4", type: "video/mp4" },
+      ];
+      if (this.data.player.advert) {
+        playerwithadvert.advertising = {
+          client: "vast",
+          schedule: [
+            {
+              tag: this.data.player.advert,
+              offset: "pre",
+            },
+          ],
+        };
+      }
+      playerwithadvert.setup(playerwithadvert);
+      playerwithadvert.once("play", () => {
+        playerwithadvert.remove();
+        this.p2p_player({ auto: true });
+      });
+    }
+    async p2p_player(set) {
+      let div = document.createElement("div");
+      div.id = "p2p_data";
+      document.body.prepend(div);
+
+      await waitForGlobalObject("p2pml", "core");
+      this.isP2PSupported = p2pml.core.HybridLoader.isSupported();
+
+      this.downloadStats = [];
+      this.downloadTotals = { http: 0, p2p: 0 };
+      this.Users = [];
+      this.uploadStats = [];
+      this.uploadTotal = 0;
+      const config = {
+        loader: {
+          trackerAnnounce: [
+            "wss://tracker.btorrent.xyz/",
+            "wss://tracker.openwebtorrent.com/",
+          ],
+          cachedSegmentExpiration: 86400000,
+          cachedSegmentsCount: 1000,
+          requiredSegmentsPriority: 50,
+          httpDownloadMaxPriority: 100,
+          httpDownloadProbability: 100,
+          httpDownloadProbabilityInterval: 1000,
+          httpDownloadProbabilitySkipIfNoPeers: true,
+          p2pDownloadMaxPriority: 100,
+          httpFailedSegmentTimeout: 10000,
+          simultaneousP2PDownloads: 5,
+          simultaneousHttpDownloads: 5,
+          httpDownloadInitialTimeout: 60000,
+          httpDownloadInitialTimeoutPerSegment: 3000,
+          httpUseRanges: true,
+          rtcConfig: {
+            iceServers: [
+              { urls: "stun:stun.l.google.com:19302" },
+              { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
+            ],
+          },
+        },
+      };
+      this.engine = this.isP2PSupported
+        ? new p2pml.hlsjs.Engine(config)
+        : undefined;
+      if (this.isP2PSupported) {
+        this.engine.on(
+          p2pml.core.Events.PieceBytesDownloaded,
+          this.onBytesDownloaded.bind(this)
+        );
+        this.engine.on(
+          p2pml.core.Events.PieceBytesUploaded,
+          this.onBytesUploaded.bind(this)
+        );
+        this.engine.on(
+          p2pml.core.Events.PeerConnect,
+          this.onPeerConnect.bind(this)
+        );
+        this.engine.on(
+          p2pml.core.Events.PeerClose,
+          this.onPeerClose.bind(this)
+        );
+        //var trackerAnnounce = this.engine.getSettings().loader.trackerAnnounce;
+      }
+      await this._player(set);
+    }
+    async _player(set) {
       let player = jwplayer("player"),
         slug = this.slug,
         ContinueDialog = this.custom.continue == "on" ? true : false;
@@ -65,7 +173,8 @@ if (top.location == self.location) {
       player.primary = "html5";
       player.hlshtml = "true";
       player.controls = "true";
-      player.autostart = this.custom.autoplay == "on" ? true : false;
+      /*player.autostart =
+        this.custom.autoplay == "on" ? true : set?.auto ? true : false;*/
       player.title = this.custom.show_title == "on" ? this.data.file.title : "";
       player.mute = this.custom.mute == "on" ? true : false;
       player.repeat = this.custom.repeat == "on" ? true : false;
@@ -85,7 +194,7 @@ if (top.location == self.location) {
           textActive: this.custom.color,
         },
       };
-      if (this.data.player.advert) {
+      /*if (this.data.player.advert) {
         player.advertising = {
           client: "vast",
           schedule: [
@@ -95,7 +204,7 @@ if (top.location == self.location) {
             },
           ],
         };
-      }
+      }*/
       if (this.data.tracks.file) {
         player.tracks = [
           {
@@ -105,7 +214,17 @@ if (top.location == self.location) {
         ];
       }
       player.setup(player);
+      jwplayer_hls_provider.attach();
 
+      if (this.isP2PSupported) {
+        p2pml.hlsjs.initJwPlayer(player, {
+          liveSyncDurationCount: 7,
+          loader: this.engine.createLoaderClass(),
+        });
+      }
+      if (set?.auto) {
+        //player.play();
+      }
       player.once("play", function () {
         let resumeAt = getLocal(`time_${slug}`);
         if (resumeAt && Math.floor(resumeAt) != 0 && ContinueDialog) {
@@ -206,11 +325,77 @@ if (top.location == self.location) {
         return true;
       };
     }
+    onBytesDownloaded(method, size) {
+      this.downloadStats.push({
+        method: method,
+        size: size,
+        timestamp: performance.now(),
+      });
+      this.downloadTotals[method] += size;
+      var httpMb = this.downloadTotals.http / 1048576;
+      var p2pMb = this.downloadTotals.p2p / 1048576;
+      var totalMb = httpMb + p2pMb;
+      this.data.p2p = Number((p2pMb * 100) / totalMb).toFixed(0);
+      this.data.http = Number((httpMb * 100) / totalMb).toFixed(0);
+      this.data.users = this.Users.length + 1;
+
+      $("#p2p_data").html(`
+      <span class="peers">Peer : 0</span>
+      <span class="p2p">P2P : 0%</span>
+      <span class="http">HTTP : 0%</span>`);
+
+      if (this.data.users > 0) {
+        $("#p2p_data span.peers").text(`Peer : ${this.data.users}`);
+        if ($("#p2p_data span.peers").hasClass("hidden")) {
+          $("#p2p_data span.peers").removeClass("hidden");
+        }
+      } else {
+        if (!$("#p2p_data span.peers").hasClass("hidden")) {
+          $("#p2p_data span.peers").addClass("hidden");
+        }
+      }
+
+      if (this.data.p2p > 0) {
+        $("#p2p_data span.p2p").text(`P2P : ${this.data.p2p}%`);
+        if ($("#p2p_data span.p2p").hasClass("hidden")) {
+          $("#p2p_data span.p2p").removeClass("hidden");
+        }
+      } else {
+        if (!$("#p2p_data span.p2p").hasClass("hidden")) {
+          $("#p2p_data span.p2p").addClass("hidden");
+        }
+      }
+      if (this.data.http > 0) {
+        $("#p2p_data span.http").text(`HTTP : ${this.data.http}%`);
+        if ($("#p2p_data span.http").hasClass("hidden")) {
+          $("#p2p_data span.http").removeClass("hidden");
+        }
+      } else {
+        if (!$("#p2p_data span.http").hasClass("hidden")) {
+          $("#p2p_data span.http").addClass("hidden");
+        }
+      }
+    }
+    onBytesUploaded(method, size) {
+      this.uploadStats.push({ size: size, timestamp: performance.now() });
+      this.uploadTotal += size;
+    }
+    onPeerConnect(peer) {
+      this.Users.push(peer.id);
+    }
+    onPeerClose(id) {
+      const index = this.Users.indexOf(id);
+      if (index > -1) {
+        this.Users.splice(index, 1); // 2nd parameter means remove one item only
+      }
+    }
     async _devtools() {}
   }
   const jw = new _0xaed1();
   jw.init();
-
+  /*function p2p_player() {
+    console.log("play")
+  }*/
   function setLocal(name, value) {
     localStorage.setItem(name, value);
   }
@@ -229,5 +414,22 @@ if (top.location == self.location) {
     seconds = String(seconds).padStart(2, "0");
 
     return hours + ":" + minutes + ":" + seconds;
+  }
+  function waitForGlobalObject(objectName, objectNextName) {
+    return new Promise((resolve) => {
+      function check() {
+        if (
+          window[objectName] !== undefined &&
+          (objectNextName === undefined ||
+            window[objectName][objectNextName] !== undefined)
+        ) {
+          resolve();
+        } else {
+          setTimeout(check, 200);
+        }
+      }
+
+      check();
+    });
   }
 }

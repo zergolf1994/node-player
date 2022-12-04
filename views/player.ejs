@@ -6,14 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
     <title><%= title %></title>
-    <link type="text/css" rel="stylesheet" charset="UTF-8" href="//<%= host %>/css/zembed.css"></head>
+    <link type="text/css" rel="stylesheet" charset="UTF-8" href="//<%= host %>/css/zembed.css?v=1.0.1"></head>
+    <script src="https://cdn.jsdelivr.net/npm/p2p-media-loader-core@latest/build/p2p-media-loader-core.min.js?v=1.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p2p-media-loader-hlsjs@latest/build/p2p-media-loader-hlsjs.min.js?v=1.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hola.org/jwplayer-hlsjs@latest/dist/jwplayer.hlsjs.min.js?v=1.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@0.14.17?v=1.0.1"></script>
+    <script src="//<%= host %>/dist/jwplayer.hlsjs.min.js?v=1.0.1"></script>
   </head>
   <body>
     <script type="text/javascript">
       const zembed = {slug : "<%= slug %>",token : "<%= token %>",id : "load-player"};
     </script>
-    <script src="//<%= host %>/js/zembed.js" async defer></script>
-    <!-- Google tag (gtag.js)
+    <script src="//<%= host %>/js/zembed.js?v=1.0.1" async defer></script>
+    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-MNDTG994HH"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -21,6 +26,6 @@
       gtag('js', new Date());
 
       gtag('config', 'G-MNDTG994HH');
-    </script> -->
+    </script>
   </body>
 </html>

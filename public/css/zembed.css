@@ -52,3 +52,25 @@ body {
 .jw-display-icon-rewind svg.jw-svg-icon {
     color: transparent !important;
 }
+
+#p2p_data:hover span {
+    color: red;
+}
+
+#p2p_data {
+    position: absolute;
+    z-index: 90000;
+    right: 0;
+    color: transparent;
+    padding: 0.5rem;
+    text-align: right;
+}
+
+#p2p_data span {
+    display: block;
+    margin-bottom: .2rem;
+}
+
+#p2p_data span.hidden {
+    display: none;
+}
