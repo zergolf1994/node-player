@@ -118,7 +118,7 @@ module.exports = async (req, res) => {
         if (!g?.status) return res.json({ status: false });
 
         data.title = g?.data?.Name;
-        data.mimetype = g?.data?.Mime;
+        data.mimetype = "video/mp4";
         save = true;
       } else {
         let gdata = await getSourceGdrive(gid, uid);
