@@ -53,11 +53,12 @@ if (top.location == self.location) {
       let div = document.createElement("div");
       div.id = "player";
       document.body.prepend(div);
-      if (this.data.player.advert) {
+      await this._player();
+      /*if (this.data.player.advert) {
         await this._playerwithadvert();
       } else {
         await this.p2p_player();
-      }
+      }*/
     }
     async _playerwithadvert() {
       let playerwithadvert = jwplayer("player"),
@@ -198,7 +199,7 @@ if (top.location == self.location) {
           textActive: this.custom.color,
         },
       };
-      /*if (this.data.player.advert) {
+      if (this.data.player.advert) {
         player.advertising = {
           client: "vast",
           schedule: [
@@ -208,7 +209,7 @@ if (top.location == self.location) {
             },
           ],
         };
-      }*/
+      }
       if (this.data.tracks.file) {
         player.tracks = [
           {
@@ -219,16 +220,14 @@ if (top.location == self.location) {
       }
       player.setup(player);
 
-      if (this.isP2PSupported) {
+      /*if (this.isP2PSupported) {
         jwplayer_hls_provider.attach();
         p2pml.hlsjs.initJwPlayer(player, {
           liveSyncDurationCount: 7,
           loader: this.engine.createLoaderClass(),
         });
-      }
-      if (set?.auto) {
-        //player.play();
-      }
+      }*/
+
       player.once("play", function () {
         let resumeAt = getLocal(`time_${slug}`);
         if (resumeAt && Math.floor(resumeAt) != 0 && ContinueDialog) {
